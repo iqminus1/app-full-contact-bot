@@ -3,7 +3,6 @@ package uz.pdp.appfullcontactbot.dto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import uz.pdp.appfullcontactbot.enums.PaymentMethod;
 
 import java.time.LocalDateTime;
 
@@ -20,6 +19,4 @@ public class TransactionDto {
     private Long amount;
 
     private LocalDateTime payAt;
-
-    private PaymentMethod method;
 }

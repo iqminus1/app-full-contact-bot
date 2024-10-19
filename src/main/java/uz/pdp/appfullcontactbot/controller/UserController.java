@@ -29,6 +29,6 @@ public class UserController {
     }
 
     private UserDto toDTO(User u) {
-        return new UserDto(u.getId(), u.getContactNumber(), u.getAdmin(), u.isSubscribed(), u.getSubscriptionEndTime(), u.getMethod());
+        return new UserDto(u.getId(), u.getContactNumber(), u.isSubscribed(), u.getSubscriptionEndTime());
     }
 }

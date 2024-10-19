@@ -1,21 +1,15 @@
 package uz.pdp.appfullcontactbot.service.telegram;
 
 import org.springframework.stereotype.Component;
-import org.springframework.util.StreamUtils;
 import org.telegram.telegrambots.bots.DefaultAbsSender;
 import org.telegram.telegrambots.bots.DefaultBotOptions;
-import org.telegram.telegrambots.meta.api.methods.GetFile;
 import org.telegram.telegrambots.meta.api.methods.groupadministration.*;
-import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
-import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageCaption;
 import org.telegram.telegrambots.meta.api.objects.Chat;
 import org.telegram.telegrambots.meta.api.objects.ChatInviteLink;
-import org.telegram.telegrambots.meta.api.objects.File;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import uz.pdp.appfullcontactbot.enums.LangFields;
@@ -24,21 +18,14 @@ import uz.pdp.appfullcontactbot.repository.GroupRepository;
 import uz.pdp.appfullcontactbot.service.LangService;
 import uz.pdp.appfullcontactbot.utils.AppConstants;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
-import java.util.UUID;
 
 @Component
 public class Sender extends DefaultAbsSender {
 
     private final GroupRepository groupRepository;
     private final LangService langService;
+    private String link;
 
     public Sender(GroupRepository groupRepository, LangService langService) {
         super(new DefaultBotOptions(), AppConstants.BOT_TOKEN);
@@ -83,11 +70,6 @@ public class Sender extends DefaultAbsSender {
         }
     }
 
-    public void openChat(Long userId, Long groupId) {
-        acceptJoinRequest(userId, groupId);
-        kickChatMember(userId, groupId);
-    }
-
     public void acceptJoinRequest(Long userId, Long groupId) {
         ApproveChatJoinRequest acceptJoinReq = new ApproveChatJoinRequest();
         acceptJoinReq.setUserId(userId);
@@ -117,6 +99,7 @@ public class Sender extends DefaultAbsSender {
             editChatInviteLink.setChatId(groupId);
             editChatInviteLink.setCreatesJoinRequest(true);
             editChatInviteLink.setName("Link by bot");
+            editChatInviteLink.setInviteLink(link);
             ChatInviteLink execute = execute(editChatInviteLink);
             return execute.getInviteLink();
         } catch (TelegramApiException e) {
@@ -142,42 +125,11 @@ public class Sender extends DefaultAbsSender {
         }
     }
 
-    public String getFilePath(String fileId) {
-        GetFile getFile = new GetFile(fileId);
-        try {
-            File execute = execute(getFile);
-
-            String fileUrl = execute.getFileUrl(AppConstants.BOT_TOKEN);
-
-            String fileName = UUID.randomUUID().toString();
-            String[] split = fileUrl.split("\\.");
-            String fileExtension = split[split.length - 1];
-            String filePath = fileName + "." + fileExtension;
-
-            Path targetPath = Paths.get(AppConstants.FILE_PATH, filePath);
-
-            Files.createDirectories(targetPath.getParent());
-
-            try (InputStream inputStream = new URL(fileUrl).openStream();
-                 OutputStream outputStream = Files.newOutputStream(targetPath)) {
-                StreamUtils.copy(inputStream, outputStream);
-            }
-
-            return targetPath.toString();
-        } catch (TelegramApiException | IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     public Chat getChat(Long userId) {
         try {
             return execute(new GetChat(userId.toString()));
         } catch (TelegramApiException e) {
-            Chat chat = new Chat();
-            chat.setId(userId);
-            chat.setUserName("topilmadi");
-            chat.setFirstName("topilmadi");
-            return chat;
+            throw new RuntimeException(e);
         }
     }
 
@@ -197,33 +149,6 @@ public class Sender extends DefaultAbsSender {
         }
     }
 
-    public void changeCaption(Long userId, Integer messageId, String text) {
-        EditMessageCaption editMessageCaption = new EditMessageCaption();
-        editMessageCaption.setChatId(userId);
-        editMessageCaption.setCaption(text);
-        editMessageCaption.setMessageId(messageId);
-        try {
-            execute(editMessageCaption);
-        } catch (TelegramApiException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public void sendDocument(Long userId, String caption, String path, InlineKeyboardMarkup keyboard) {
-        SendDocument document = new SendDocument();
-        document.setCaption(caption);
-        InputFile photo = new InputFile();
-        photo.setMedia(new java.io.File(path));
-        document.setDocument(photo);
-        document.setChatId(userId);
-        document.setReplyMarkup(keyboard);
-        try {
-            execute(document);
-        } catch (TelegramApiException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     public void deleteMessage(Long userId, Integer messageId) {
         try {
             executeAsync(new DeleteMessage(userId.toString(), messageId));
@@ -232,12 +157,18 @@ public class Sender extends DefaultAbsSender {
         }
     }
 
+    //TODO: Yaxshiroq qilish kerak
     public void sendLink(Long userId) {
+        if (link != null) {
+            sendMessage(userId, langService.getMessage(LangFields.LINK_TEXT, userId) + " " + link);
+            return;
+        }
         List<Group> groups = groupRepository.findAll();
         if (groups.size() != 1)
             return;
         Group group = groups.get(0);
         String link = getLink(group.getGroupId());
         sendMessage(userId, langService.getMessage(LangFields.LINK_TEXT, userId) + " " + link);
+        this.link = link;
     }
 }

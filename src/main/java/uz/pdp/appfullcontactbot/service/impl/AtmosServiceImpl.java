@@ -13,8 +13,9 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 import uz.pdp.appfullcontactbot.dto.request.*;
 import uz.pdp.appfullcontactbot.dto.response.*;
+import uz.pdp.appfullcontactbot.model.Card;
 import uz.pdp.appfullcontactbot.model.Group;
-import uz.pdp.appfullcontactbot.model.User;
+import uz.pdp.appfullcontactbot.repository.CardRepository;
 import uz.pdp.appfullcontactbot.repository.GroupRepository;
 import uz.pdp.appfullcontactbot.service.AtmosService;
 import uz.pdp.appfullcontactbot.service.telegram.Sender;
@@ -24,6 +25,7 @@ import uz.pdp.appfullcontactbot.utils.CommonUtils;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
@@ -37,6 +39,7 @@ public class AtmosServiceImpl implements AtmosService {
     private final CommonUtils commonUtils;
     private final GroupRepository groupRepository;
     private final Sender sender;
+    private final CardRepository cardRepository;
     private String token = null;
     private long tokenExpirationTime = 0;
 
@@ -246,11 +249,20 @@ public class AtmosServiceImpl implements AtmosService {
 
     @Override
     public ApplyResponse autoPayment(Long userId) {
-        User user = commonUtils.getUser(userId);
         TransactionResponse transaction = createTransaction(new TransactionRequest(userId));
         String transactionId = transaction.getTransactionId();
-        preApplyPayment(new PreApplyRequest(transactionId, user.getCardToken()));
-        return applyPayment(new ApplyRequest(transactionId));
+        List<Card> cards = cardRepository.findAllByUserId(userId).stream().sorted(Comparator.comparing(Card::isMain)).toList();
+        if (cards.isEmpty())
+            throw new RuntimeException("Card is empty");
+
+        ApplyResponse applyResponse = null;
+        for (Card card : cards) {
+            preApplyPayment(new PreApplyRequest(transactionId, card.getToken()));
+            applyResponse = applyPayment(new ApplyRequest(transactionId));
+            if (applyResponse.getErrorMessage() == null)
+                return applyResponse;
+        }
+        return applyResponse;
     }
 
     @Override

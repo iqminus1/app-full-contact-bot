@@ -6,7 +6,6 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import uz.pdp.appfullcontactbot.enums.Lang;
 import uz.pdp.appfullcontactbot.enums.State;
-import uz.pdp.appfullcontactbot.model.Transaction;
 import uz.pdp.appfullcontactbot.model.User;
 import uz.pdp.appfullcontactbot.repository.UserRepository;
 
@@ -19,8 +18,6 @@ import java.util.concurrent.ConcurrentMap;
 @RequiredArgsConstructor
 public class CommonUtils {
     private final ConcurrentMap<Long, User> users = new ConcurrentHashMap<>();
-    private final ConcurrentMap<Long, Transaction> transfers = new ConcurrentHashMap<>();
-    private final ConcurrentMap<Long, Integer> tariffId = new ConcurrentHashMap<>();
     private final UserRepository userRepository;
 
     public User getUser(Long userId) {
@@ -60,27 +57,6 @@ public class CommonUtils {
         List<User> list = users.values().stream().toList();
         userRepository.saveAll(list);
         users.clear();
-    }
-
-
-    public Transaction getTransaction(Long userId) {
-        return transfers.computeIfAbsent(userId, k -> new Transaction());
-    }
-
-    public void removeTransaction(Long userid) {
-        transfers.remove(userid);
-    }
-
-    public Integer getTariffId(Long userId) {
-        return tariffId.get(userId);
-    }
-
-    public void setTariffId(Long userId, Integer tariff) {
-        tariffId.put(userId, tariff);
-    }
-
-    public void removeTariffId(Long userId) {
-        tariffId.remove(userId);
     }
 
     @PreDestroy

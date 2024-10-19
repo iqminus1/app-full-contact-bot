@@ -3,119 +3,43 @@ package uz.pdp.appfullcontactbot.service.impl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
-import org.telegram.telegrambots.meta.api.objects.Message;
 import uz.pdp.appfullcontactbot.enums.LangFields;
-import uz.pdp.appfullcontactbot.enums.PaymentMethod;
 import uz.pdp.appfullcontactbot.enums.State;
-import uz.pdp.appfullcontactbot.enums.Status;
-import uz.pdp.appfullcontactbot.model.Group;
-import uz.pdp.appfullcontactbot.model.Photo;
-import uz.pdp.appfullcontactbot.model.Transaction;
 import uz.pdp.appfullcontactbot.model.User;
-import uz.pdp.appfullcontactbot.repository.GroupRepository;
-import uz.pdp.appfullcontactbot.repository.PhotoRepository;
-import uz.pdp.appfullcontactbot.repository.TransactionRepository;
 import uz.pdp.appfullcontactbot.repository.UserRepository;
+import uz.pdp.appfullcontactbot.service.ButtonService;
 import uz.pdp.appfullcontactbot.service.CallbackService;
 import uz.pdp.appfullcontactbot.service.LangService;
-import uz.pdp.appfullcontactbot.service.MessageService;
 import uz.pdp.appfullcontactbot.service.telegram.Sender;
 import uz.pdp.appfullcontactbot.utils.AppConstants;
 import uz.pdp.appfullcontactbot.utils.CommonUtils;
-
-import java.time.LocalDateTime;
-import java.util.List;
-
-import static uz.pdp.appfullcontactbot.utils.AppConstants.getChatToString;
-import static uz.pdp.appfullcontactbot.utils.AppConstants.setSubscriptionTime;
 
 @Service
 @RequiredArgsConstructor
 public class CallbackServiceImpl implements CallbackService {
     private final CommonUtils commonUtils;
-    private final PhotoRepository photoRepository;
-    private final LangService langService;
     private final Sender sender;
-    private final TransactionRepository transactionRepository;
-    private final GroupRepository groupRepository;
     private final UserRepository userRepository;
-    private final MessageService messageService;
+    private final LangService langService;
+    private final ButtonService buttonService;
 
     @Override
     public void process(CallbackQuery callbackQuery) {
         String data = callbackQuery.getData();
         if (data.equals(AppConstants.OFERTA_I_AGREE_DATA)) {
             setAgree(callbackQuery);
-        } else if (commonUtils.getState(callbackQuery.getFrom().getId()).equals(State.ADMIN_MENU)) {
-            if (data.startsWith(AppConstants.ACCEPT_SCREENSHOT_DATA)) {
-                acceptScreenshot(callbackQuery);
-            } else if (data.startsWith(AppConstants.REJECT_SCREENSHOT_DATA))
-                rejectScreenshot(callbackQuery);
         }
     }
 
     private void setAgree(CallbackQuery callbackQuery) {
         Long userId = callbackQuery.getFrom().getId();
         User user = commonUtils.getUser(userId);
+        sender.deleteMessage(userId, callbackQuery.getMessage().getMessageId());
+        if (user.isAgreed())
+            return;
         user.setAgreed(true);
         userRepository.save(user);
-        Integer messageId = callbackQuery.getMessage().getMessageId();
-        sender.deleteMessage(userId, messageId);
-        Message message = new Message();
-        message.setChat(callbackQuery.getMessage().getChat());
-        message.setFrom(callbackQuery.getFrom());
-        message.setText("/start");
-        messageService.process(message);
-    }
-
-    private void rejectScreenshot(CallbackQuery callbackQuery) {
-        Integer messageId = callbackQuery.getMessage().getMessageId();
-        Long userId = callbackQuery.getFrom().getId();
-        long photoId = Long.parseLong(callbackQuery.getData().split(":")[1]);
-        Photo screenshot = updatePhoto(photoId, Status.REJECT);
-        String message = langService.getMessage(LangFields.REJECTED_SCREENSHOT_TEXT, userId);
-        String tariff = "Oylik";
-        if (screenshot.getTariff() == 2)
-            tariff = "2 oylik";
-        message = message + "\n" + getChatToString(sender.getChat(userId)) + "\n" + "Tariff: " + tariff;
-        sender.changeCaption(userId, messageId, message);
-
-        sender.sendMessage(screenshot.getSendUserId(), langService.getMessage(LangFields.SCREENSHOT_IS_INVALID_TEXT, screenshot.getSendUserId()));
-    }
-
-    private void acceptScreenshot(CallbackQuery callbackQuery) {
-        Integer messageId = callbackQuery.getMessage().getMessageId();
-        Long userId = callbackQuery.getFrom().getId();
-        long photoId = Long.parseLong(callbackQuery.getData().split(":")[1]);
-        Photo screenshot = updatePhoto(photoId, Status.ACCEPT);
-        String message = langService.getMessage(LangFields.ACCEPTED_SCREENSHOT_TEXT, userId);
-        String tariff = "Oylik";
-        if (screenshot.getTariff() == 2)
-            tariff = "2 oylik";
-        message = message + "\n" + getChatToString(sender.getChat(userId)) + "\n" + "Tariff: " + tariff;
-        sender.changeCaption(userId, messageId, message);
-
-        Transaction transaction = new Transaction(null, null, screenshot.getId().toString(), screenshot.getSendUserId(), AppConstants.PRICE_ONCE, LocalDateTime.now(), PaymentMethod.CARD);
-        if (screenshot.getTariff() == 2)
-            transaction.setAmount(AppConstants.PRICE_TWICE);
-
-        transactionRepository.save(transaction);
-
-        User user = commonUtils.getUser(screenshot.getSendUserId());
-        user.setMethod(PaymentMethod.CARD);
-        userRepository.save(setSubscriptionTime(user, screenshot.getTariff()));
-
-        List<Group> groups = groupRepository.findAll();
-        if (groups.size() == 1) {
-            sender.sendMessage(user.getId(), langService.getMessage(LangFields.SCREENSHOT_IS_VALID_TEXT, screenshot.getSendUserId()) + " -> " + sender.getLink(groups.get(0).getGroupId()));
-        }
-    }
-
-
-    private Photo updatePhoto(long photoId, Status status) {
-        Photo photo = photoRepository.findById(photoId).orElseThrow();
-        photo.setStatus(status);
-        photo.setActiveAt(LocalDateTime.now());
-        return photoRepository.save(photo);
+        user.setState(State.SENDING_CONTACT_NUMBER);
+        sender.sendMessage(userId, langService.getMessage(LangFields.SEND_CONTACT_TEXT, userId), buttonService.requestContact(userId));
     }
 }

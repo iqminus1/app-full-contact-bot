@@ -41,15 +41,14 @@ public class JoinChatServiceImpl implements JoinChatService {
 
         if (user.getSubscriptionEndTime() != null) {
             if (user.getSubscriptionEndTime().isBefore(LocalDateTime.now())) {
-                sender.sendMessage(userId, langService.getMessage(LangFields.PAID_GROUP_TEXT, chatJoinRequest.getUser().getLanguageCode()).formatted(name), buttonService.start(userId));
+                sender.sendMessage(userId, langService.getMessage(LangFields.PAID_GROUP_TEXT, chatJoinRequest.getUser().getLanguageCode()).formatted(name), buttonService.ofertaButton(userId));
             } else {
                 sender.acceptJoinRequest(userId, groupId);
                 user.setSubscribed(true);
                 userRepository.save(user);
             }
         } else {
-            sender.openChat(userId, groupId);
-            sender.sendMessage(userId, langService.getMessage(LangFields.PAID_GROUP_TEXT, chatJoinRequest.getUser().getLanguageCode()).formatted(name), buttonService.start(userId));
+            sender.sendMessage(userId, langService.getMessage(LangFields.PAID_GROUP_TEXT, chatJoinRequest.getUser().getLanguageCode()).formatted(name), buttonService.ofertaButton(userId));
         }
     }
 

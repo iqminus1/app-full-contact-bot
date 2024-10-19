@@ -16,19 +16,13 @@ public interface ButtonService {
 
     InlineKeyboardMarkup callbackKeyboard(List<Map<String, String>> textData);
 
-    InlineKeyboardMarkup webAppKeyboard(String text, String url);
-
-    ReplyKeyboard language(Long userId);
-
     ReplyKeyboard start(Long userId);
 
     ReplyKeyboard requestContact(Long userId);
 
-    ReplyKeyboard adminMenu(Long userId, int adminLvl);
 
     ReplyKeyboard paymentMethods(Long userId);
 
-    InlineKeyboardMarkup screenshotKeyboard(Long userId, Long screenshotId);
 
     InlineKeyboardMarkup ofertaButton(Long userId);
 

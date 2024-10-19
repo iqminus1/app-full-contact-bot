@@ -6,16 +6,16 @@ import uz.pdp.appfullcontactbot.model.User;
 import java.time.LocalDateTime;
 
 public interface AppConstants {
-    String BOT_TOKEN = "7292486955:AAHpywzot9ZBMnFUnrZnH8YycfRWar8Wdo0";
-    String BOT_USERNAME = "CourseOfLifeBot";
+    String BOT_TOKEN = "7637751901:AAH-CWlyqsGZ_OXt5Cwq_dIkDjV7i3tI0RU";
+    String BOT_USERNAME = "SelfDevelopment_uz_bot";
     String START = "/start";
-    Long PRICE_ONCE = 49000L;
-    Long PRICE_TWICE = 89000L;
+    Long PRICE = 1000L;
     String OFERTA_I_AGREE_DATA = "iAgree";
 
     //Auth Atmos
-    String CLIENT_ID = "id";
-    String CLIENT_SECRET = "secret";
+    String CLIENT_ID = "XGxjoucAcCffzaH_k4YG4TKfnXEa";
+    String CLIENT_SECRET = "Cu83htpzy_e2xvErKM3DN54iaEAa";
+    Integer STORE_ID = 7997;
 
     //ATMOS API URLs
     String ATMOS_AUTH_URL = "https://partner.atmos.uz/token";
@@ -26,26 +26,12 @@ public interface AppConstants {
     String ATMOS_APPLY_URL = "https://partner.atmos.uz/merchant/pay/apply-ofd";
     String ATMOS_REMOVE_CARD_URL = "https://partner.atmos.uz/partner/remove-card";
 
-    String WEB_APP_LINK = "https://daryo.uz?userId=";
+    String WEB_APP_LINK = "https://daryo.uz/userId=";
+    String OFERTA_LINK = "https://behad.uz/marifat/oferta.pdf";
 
-    Integer STORE_ID = null;
     String ERROR_TEXT = "STPIMS-ERR-";
     int ERROR_LENGTH = ERROR_TEXT.length();
-    String SET_ADMIN_CODE = "2456FA55fJ1235GKNBNMKAU";
-
-    boolean IS_PAYMENT = true;
-
-    boolean IS_TRANSFER = false;
-
-    boolean IS_CARD = false;
-
-    String CARD_NUMBER = "9800 0000 0000 0000";
-    String CARD_NAME = "Qodirov Abdulaziz";
-    String FILE_PATH = "C:/Users/User/IdeaProjects/app-telegram-bot-auto-payment/files/";
-    String ACCEPT_SCREENSHOT_DATA = "acceptScreenshot:";
-    String REJECT_SCREENSHOT_DATA = "rejectScreenshot:";
-    String PHOTO_PATH = "C:\\Users\\User\\IdeaProjects\\app-telegram-bot-auto-payment\\files/first_photo.jpg";
-    String OFERTA_LINK = "https://behad.uz/marifat/oferta.pdf";
+    String PHOTO_PATH = "C:\\Users\\User\\Desktop\\projects\\app-full-contact-bot\\files/banner_photo.jpg";
 
     static User setSubscriptionTime(User user) {
         return setSubscriptionTime(user, 1);
