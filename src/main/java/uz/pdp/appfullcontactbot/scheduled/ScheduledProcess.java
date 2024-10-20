@@ -1,40 +1,22 @@
-//package uz.pdp.appfullcontactbot.scheduled;
-//
-//import lombok.RequiredArgsConstructor;
-//import org.springframework.scheduling.annotation.Async;
-//import org.springframework.scheduling.annotation.Scheduled;
-//import org.springframework.stereotype.Component;
-//import uz.pdp.appfullcontactbot.dto.response.ApplyResponse;
-//import uz.pdp.appfullcontactbot.enums.LangFields;
-//import uz.pdp.appfullcontactbot.model.Group;
-//import uz.pdp.appfullcontactbot.model.Transaction;
-//import uz.pdp.appfullcontactbot.model.User;
-//import uz.pdp.appfullcontactbot.repository.GroupRepository;
-//import uz.pdp.appfullcontactbot.repository.TransactionRepository;
-//import uz.pdp.appfullcontactbot.repository.UserRepository;
-//import uz.pdp.appfullcontactbot.service.AtmosService;
-//import uz.pdp.appfullcontactbot.service.ButtonService;
-//import uz.pdp.appfullcontactbot.service.LangService;
-//import uz.pdp.appfullcontactbot.service.telegram.Sender;
-//import uz.pdp.appfullcontactbot.utils.AppConstants;
-//import uz.pdp.appfullcontactbot.utils.CommonUtils;
-//
-//import java.time.LocalDate;
-//import java.time.LocalDateTime;
-//import java.time.temporal.ChronoUnit;
-//import java.util.List;
-//
-//@Component
-//@RequiredArgsConstructor
-//public class ScheduledProcess {
-//    private final UserRepository userRepository;
-//    private final AtmosService atmosService;
-//    private final Sender sender;
-//    private final GroupRepository groupRepository;
-//    private final TransactionRepository transactionRepository;
-//    private final CommonUtils commonUtils;
-//    private final LangService langService;
-//    private final ButtonService buttonService;
+package uz.pdp.appfullcontactbot.scheduled;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+import uz.pdp.appfullcontactbot.dto.response.ApplyResponse;
+import uz.pdp.appfullcontactbot.model.Transaction;
+import uz.pdp.appfullcontactbot.repository.CardRepository;
+import uz.pdp.appfullcontactbot.repository.TransactionRepository;
+import uz.pdp.appfullcontactbot.service.AtmosService;
+
+import java.util.concurrent.TimeUnit;
+
+@Component
+@RequiredArgsConstructor
+public class ScheduledProcess {
+    private final CardRepository cardRepository;
+    private final AtmosService atmosService;
+    private final TransactionRepository transactionRepository;
 //
 //    @Async
 //    public void rememberPayment() {
@@ -104,5 +86,10 @@
 //        sender.sendMessage(user.getId(), langService.getMessage(field, user.getId()));
 //
 //    }
-//
-//}
+
+//    @Scheduled(fixedRate = 10, timeUnit = TimeUnit.SECONDS)
+//    public void dasfddas() {
+//        ApplyResponse applyResponse = atmosService.autoPayment(5182943798L);
+//        transactionRepository.save(new Transaction(applyResponse, "860033******9390"));
+//    }
+}

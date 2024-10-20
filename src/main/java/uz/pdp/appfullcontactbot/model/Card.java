@@ -10,6 +10,7 @@ import lombok.*;
 @Getter
 @ToString
 @Entity
+@Builder
 public class Card {
     @Id
     private Long id;
@@ -23,4 +24,6 @@ public class Card {
     private Long userId;
 
     private boolean main;
+
+    private String transactionId;
 }

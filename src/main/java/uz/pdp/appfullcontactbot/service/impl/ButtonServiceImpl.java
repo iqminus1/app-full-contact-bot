@@ -10,22 +10,22 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.Keyboard
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.api.objects.webapp.WebAppInfo;
 import uz.pdp.appfullcontactbot.enums.LangFields;
+import uz.pdp.appfullcontactbot.model.Card;
 import uz.pdp.appfullcontactbot.model.User;
+import uz.pdp.appfullcontactbot.repository.TransactionRepository;
 import uz.pdp.appfullcontactbot.service.ButtonService;
 import uz.pdp.appfullcontactbot.service.LangService;
 import uz.pdp.appfullcontactbot.utils.AppConstants;
 import uz.pdp.appfullcontactbot.utils.CommonUtils;
 
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
 public class ButtonServiceImpl implements ButtonService {
     private final LangService langService;
     private final CommonUtils commonUtils;
+    private final TransactionRepository transactionRepository;
 
     @Override
     public ReplyKeyboard withString(List<String> list, int rowSize) {
@@ -73,16 +73,38 @@ public class ButtonServiceImpl implements ButtonService {
 
     @Override
     public ReplyKeyboard start(Long userId) {
-        List<String> strings = new LinkedList<>();
         User user = commonUtils.getUser(userId);
+        ReplyKeyboardMarkup markup = new ReplyKeyboardMarkup();
+        markup.setResizeKeyboard(true);
+        List<KeyboardRow> rows = new ArrayList<>();
         if (user.isHasCard()) {
-            //TODO: sharoitga qarab
+            //|| user.getSubscriptionEndTime().isAfter(LocalDateTime.now())
+            if (!user.isPayment()) {
+                String start = langService.getMessage(LangFields.START_PAYMENT_TEXT, userId);
+                rows.add(new KeyboardRow(List.of(new KeyboardButton(start))));
+            }
+
+            String card = langService.getMessage(LangFields.BUTTON_MY_CARDS_LIST_TEXT, userId);
+            rows.add(new KeyboardRow(List.of(new KeyboardButton(card))));
+
         } else {
-            strings.add(langService.getMessage(LangFields.ACTIVATE_SUBSCRIPTION, userId));
+            KeyboardButton activateSubscription = new KeyboardButton();
+            activateSubscription.setText(langService.getMessage(LangFields.BUTTON_ACTIVATE_SUBSCRIPTION, userId));
+            activateSubscription.setWebApp(new WebAppInfo(AppConstants.WEB_APP_LINK + userId));
+            rows.add(new KeyboardRow(List.of(activateSubscription)));
         }
 
-        strings.add(langService.getMessage(LangFields.CONTACT_TO_ADMIN_TEXT, userId));
-        return withString(strings);
+        if (!transactionRepository.findAllByUserId(userId).isEmpty()) {
+            String history = langService.getMessage(LangFields.BUTTON_PAYMENT_HISTORY_TEXT, userId);
+            rows.add(new KeyboardRow(List.of(new KeyboardButton(history))));
+        }
+
+        KeyboardButton contactToAdmin = new KeyboardButton();
+        contactToAdmin.setText(langService.getMessage(LangFields.BUTTON_CONTACT_TO_ADMIN_TEXT, userId));
+        rows.add(new KeyboardRow(List.of(contactToAdmin)));
+
+        markup.setKeyboard(rows);
+        return markup;
     }
 
     @Override
@@ -92,7 +114,7 @@ public class ButtonServiceImpl implements ButtonService {
         List<KeyboardRow> rows = new ArrayList<>();
         //contact req
         KeyboardRow row1 = new KeyboardRow();
-        KeyboardButton request = new KeyboardButton(langService.getMessage(LangFields.REQUEST_CONTACT_TEXT, userId));
+        KeyboardButton request = new KeyboardButton(langService.getMessage(LangFields.BUTTON_REQUEST_CONTACT_TEXT, userId));
         request.setRequestContact(true);
         row1.add(request);
 
@@ -102,38 +124,48 @@ public class ButtonServiceImpl implements ButtonService {
     }
 
     @Override
-    public ReplyKeyboard paymentMethods(Long userId) {
-        List<String> strings = new ArrayList<>();
-        return withString(strings);
-    }
-
-    @Override
     public InlineKeyboardMarkup ofertaButton(Long userId) {
         InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
         InlineKeyboardButton link = new InlineKeyboardButton();
         link.setUrl(AppConstants.OFERTA_LINK);
-        link.setText(langService.getMessage(LangFields.OFERTA_LINK_TEXT, userId));
+        link.setText(langService.getMessage(LangFields.BUTTON_OFERTA_LINK_TEXT, userId));
 
         InlineKeyboardButton iAgree = new InlineKeyboardButton();
-        iAgree.setText(langService.getMessage(LangFields.OFERTA_AGREE_TEXT, userId));
+        iAgree.setText(langService.getMessage(LangFields.BUTTON_OFERTA_AGREE_TEXT, userId));
         iAgree.setCallbackData(AppConstants.OFERTA_I_AGREE_DATA);
         markup.setKeyboard(List.of(List.of(link), List.of(iAgree)));
         return markup;
     }
 
     @Override
-    public ReplyKeyboard withWebApp(Long userId) {
-        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+    public ReplyKeyboard paymentHistory(Long userId) {
+        List<String> strings = new LinkedList<>();
 
-        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
-        List<InlineKeyboardButton> row = new ArrayList<>();
+        strings.add(langService.getMessage(LangFields.GET_LINK_TEXT, userId));
+        if (commonUtils.getUser(userId).isPayment())
+            strings.add(langService.getMessage(LangFields.STOP_PAYMENT_TEXT, userId));
 
-        InlineKeyboardButton inlineKeyboardButton = new InlineKeyboardButton(langService.getMessage(LangFields.WEB_APP_BUTTON, userId));
-        inlineKeyboardButton.setWebApp(new WebAppInfo(AppConstants.WEB_APP_LINK + userId));
-        row.add(inlineKeyboardButton);
-        rows.add(row);
+        strings.add(langService.getMessage(LangFields.BACK_TEXT, userId));
 
-        markup.setKeyboard(rows);
+        return withString(strings);
+    }
+
+    @Override
+    public InlineKeyboardMarkup usersCardsList(Long userId, List<Card> cards) {
+        List<Map<String, String>> list = new ArrayList<>();
+        for (Card card : cards) {
+            Map<String, String> map = new LinkedHashMap<>();
+            map.put(card.getPan(), AppConstants.CARD_INFO_TEXT + card.getId());
+            list.add(map);
+        }
+        InlineKeyboardMarkup markup = callbackKeyboard(list);
+
+        List<List<InlineKeyboardButton>> keyboard = markup.getKeyboard();
+        InlineKeyboardButton button = new InlineKeyboardButton(langService.getMessage(LangFields.INLINE_ADD_CARD_TEXT, userId));
+        button.setWebApp(new WebAppInfo(AppConstants.WEB_APP_LINK + userId));
+        keyboard.add(List.of(button));
+        markup.setKeyboard(keyboard);
+
         return markup;
     }
 }

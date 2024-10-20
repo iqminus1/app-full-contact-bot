@@ -2,6 +2,7 @@ package uz.pdp.appfullcontactbot.service;
 
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
+import uz.pdp.appfullcontactbot.model.Card;
 
 import java.util.List;
 import java.util.Map;
@@ -21,10 +22,9 @@ public interface ButtonService {
     ReplyKeyboard requestContact(Long userId);
 
 
-    ReplyKeyboard paymentMethods(Long userId);
-
-
     InlineKeyboardMarkup ofertaButton(Long userId);
 
-    ReplyKeyboard withWebApp(Long userId);
+    ReplyKeyboard paymentHistory(Long userId);
+
+    InlineKeyboardMarkup usersCardsList(Long userId, List<Card> cards);
 }
