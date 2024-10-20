@@ -26,12 +26,13 @@ public interface AppConstants {
     String ATMOS_APPLY_URL = "https://partner.atmos.uz/merchant/pay/apply-ofd";
     String ATMOS_REMOVE_CARD_URL = "https://partner.atmos.uz/partner/remove-card";
 
-    String WEB_APP_LINK = "https://daryo.uz/userId=";
+    String WEB_APP_LINK = "https://web-page-one-theta.vercel.app/";
     String OFERTA_LINK = "https://behad.uz/marifat/oferta.pdf";
 
     String ERROR_TEXT = "STPIMS-ERR-";
     int ERROR_LENGTH = ERROR_TEXT.length();
     String PHOTO_PATH = "C:\\Users\\User\\Desktop\\projects\\app-full-contact-bot\\files/banner_photo.jpg";
+    String CARD_INFO_TEXT = "cardInfo:";
 
     static User setSubscriptionTime(User user) {
         return setSubscriptionTime(user, 1);

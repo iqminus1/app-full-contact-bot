@@ -6,6 +6,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import uz.pdp.appfullcontactbot.enums.Lang;
 import uz.pdp.appfullcontactbot.enums.State;
+import uz.pdp.appfullcontactbot.model.Card;
 import uz.pdp.appfullcontactbot.model.User;
 import uz.pdp.appfullcontactbot.repository.UserRepository;
 
@@ -18,6 +19,7 @@ import java.util.concurrent.ConcurrentMap;
 @RequiredArgsConstructor
 public class CommonUtils {
     private final ConcurrentMap<Long, User> users = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, Card> cards = new ConcurrentHashMap<>();
     private final UserRepository userRepository;
 
     public User getUser(Long userId) {
@@ -63,5 +65,17 @@ public class CommonUtils {
     public void saveUtils() {
         userRepository.saveAll(users.values());
         users.clear();
+    }
+
+    public void addCard(String transactionId, Card card) {
+        cards.put(transactionId, card);
+    }
+
+    public Card getCard(String transactionId) {
+        return cards.get(transactionId);
+    }
+
+    public void removeCard(String transactionId) {
+        cards.remove(transactionId);
     }
 }

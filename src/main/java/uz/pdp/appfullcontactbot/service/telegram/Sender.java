@@ -7,9 +7,11 @@ import org.telegram.telegrambots.meta.api.methods.groupadministration.*;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
+import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.Chat;
 import org.telegram.telegrambots.meta.api.objects.ChatInviteLink;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import uz.pdp.appfullcontactbot.enums.LangFields;
@@ -34,16 +36,46 @@ public class Sender extends DefaultAbsSender {
     }
 
     public void sendMessage(Long userId, String text) {
-        try {
-            execute(new SendMessage(userId.toString(), text));
-        } catch (TelegramApiException e) {
-            throw new RuntimeException(e);
+        final int MAX_LENGTH = 1024;
+        if (text.length() > MAX_LENGTH) {
+
+            int startIndex = 0;
+
+            while (startIndex < text.length() - 1) {
+                int endIndex = Math.min(startIndex + MAX_LENGTH, text.length());
+
+
+                int lastNewLineIndex = text.lastIndexOf("\n\n", endIndex);
+                if (lastNewLineIndex != -1 && lastNewLineIndex > startIndex) {
+                    endIndex = lastNewLineIndex;
+                }
+
+                String part = text.substring(startIndex, endIndex).trim();
+
+                SendMessage message = new SendMessage(userId.toString(), part);
+
+                try {
+                    execute(message);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+
+                startIndex = endIndex + 1;
+            }
+        } else {
+            try {
+                execute(new SendMessage(userId.toString(), text));
+            } catch (TelegramApiException e) {
+                throw new RuntimeException(e);
+            }
         }
+
     }
 
     public void sendMessageWithMarkdown(Long userId, String text, ReplyKeyboard replyKeyboard) {
         SendMessage sendMessage = new SendMessage(userId.toString(), text);
-        sendMessage.setReplyMarkup(replyKeyboard);
+        if (replyKeyboard != null)
+            sendMessage.setReplyMarkup(replyKeyboard);
         sendMessage.setParseMode("Markdown");
         try {
             execute(sendMessage);
@@ -52,12 +84,58 @@ public class Sender extends DefaultAbsSender {
         }
     }
 
-    public void sendMessage(Long userId, String text, ReplyKeyboard replyKeyboard) {
-        SendMessage sendMessage = new SendMessage(userId.toString(), text);
-        sendMessage.setReplyMarkup(replyKeyboard);
+    public int sendMessage(Long userId, String text, ReplyKeyboard replyKeyboard) {
+        final int MAX_LENGTH = 1024;
+        int messageId = 0;
+        if (text.length() > MAX_LENGTH) {
+            int startIndex = 0;
+
+            while (startIndex < text.length() - 1) {
+                int endIndex = Math.min(startIndex + MAX_LENGTH, text.length());
+
+                int lastNewLineIndex = text.lastIndexOf("\n\n", endIndex);
+                if (lastNewLineIndex != -1 && lastNewLineIndex > startIndex) {
+                    endIndex = lastNewLineIndex;
+                }
+
+                String part = text.substring(startIndex, endIndex).trim();
+
+                SendMessage message = new SendMessage(userId.toString(), part);
+
+                try {
+                    if (replyKeyboard != null) {
+                        message.setReplyMarkup(replyKeyboard);
+                        messageId = execute(message).getMessageId();
+                    } else messageId = execute(message).getMessageId();
+
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+
+                startIndex = endIndex + 1;
+            }
+            return messageId;
+        } else {
+            try {
+                SendMessage sendMessage = new SendMessage(userId.toString(), text);
+                sendMessage.setReplyMarkup(replyKeyboard);
+                return execute(sendMessage).getMessageId();
+            } catch (TelegramApiException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    public void editMessage(Long userId, Integer messageId, String text, InlineKeyboardMarkup replyKeyboard) {
+        EditMessageText editMessageText = new EditMessageText();
+        editMessageText.setMessageId(messageId);
+        editMessageText.setChatId(userId);
+        editMessageText.setText(text);
+        editMessageText.setReplyMarkup(replyKeyboard);
         try {
-            execute(sendMessage);
+            execute(editMessageText);
         } catch (TelegramApiException e) {
+            System.err.println("Ошибка редактирования сообщения: " + e.getMessage());
             throw new RuntimeException(e);
         }
     }
@@ -99,7 +177,8 @@ public class Sender extends DefaultAbsSender {
             editChatInviteLink.setChatId(groupId);
             editChatInviteLink.setCreatesJoinRequest(true);
             editChatInviteLink.setName("Link by bot");
-            editChatInviteLink.setInviteLink(link);
+            if (link != null)
+                editChatInviteLink.setInviteLink(link);
             ChatInviteLink execute = execute(editChatInviteLink);
             return execute.getInviteLink();
         } catch (TelegramApiException e) {
@@ -158,7 +237,7 @@ public class Sender extends DefaultAbsSender {
     }
 
     //TODO: Yaxshiroq qilish kerak
-    public void sendLink(Long userId) {
+    public void sendLink(Long userId, ReplyKeyboard replyKeyboard) {
         if (link != null) {
             sendMessage(userId, langService.getMessage(LangFields.LINK_TEXT, userId) + " " + link);
             return;
@@ -168,7 +247,7 @@ public class Sender extends DefaultAbsSender {
             return;
         Group group = groups.get(0);
         String link = getLink(group.getGroupId());
-        sendMessage(userId, langService.getMessage(LangFields.LINK_TEXT, userId) + " " + link);
+        sendMessage(userId, langService.getMessage(LangFields.LINK_TEXT, userId) + " " + link, replyKeyboard);
         this.link = link;
     }
 }

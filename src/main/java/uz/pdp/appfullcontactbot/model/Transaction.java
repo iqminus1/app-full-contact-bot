@@ -30,11 +30,14 @@ public class Transaction {
 
     private LocalDateTime payAt;
 
-    public Transaction(ApplyResponse applyResponse) {
+    private String pan;
+
+    public Transaction(ApplyResponse applyResponse,String pan) {
         this.amount = applyResponse.getAmount() / 100;
         this.userId = applyResponse.getUserId();
         this.transId = applyResponse.getTransId();
         this.successTransId = applyResponse.getSuccessTransId();
         this.payAt = LocalDateTime.now();
+        this.pan = pan;
     }
 }

@@ -26,6 +26,8 @@ public class User {
 
     private boolean hasCard;
 
+    private boolean payment;
+
     private boolean agreed;
 
     @Enumerated(EnumType.STRING)
