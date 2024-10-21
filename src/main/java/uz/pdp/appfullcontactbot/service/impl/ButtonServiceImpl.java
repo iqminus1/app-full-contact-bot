@@ -164,8 +164,17 @@ public class ButtonServiceImpl implements ButtonService {
         InlineKeyboardButton button = new InlineKeyboardButton(langService.getMessage(LangFields.INLINE_ADD_CARD_TEXT, userId));
         button.setWebApp(new WebAppInfo(AppConstants.WEB_APP_LINK + userId));
         keyboard.add(List.of(button));
+
+        InlineKeyboardButton back = new InlineKeyboardButton(langService.getMessage(LangFields.BACK_TEXT, userId));
+        back.setCallbackData(AppConstants.BACK_TO_START_DATA);
+        keyboard.add(List.of(back));
         markup.setKeyboard(keyboard);
 
         return markup;
+    }
+
+    @Override
+    public InlineKeyboardMarkup cardInfo(long cardId, boolean main) {
+        return null;
     }
 }

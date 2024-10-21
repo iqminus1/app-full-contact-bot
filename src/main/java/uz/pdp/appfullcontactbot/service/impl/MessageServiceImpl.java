@@ -2,11 +2,8 @@ package uz.pdp.appfullcontactbot.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageReplyMarkup;
-import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
 import uz.pdp.appfullcontactbot.enums.LangFields;
 import uz.pdp.appfullcontactbot.enums.State;
 import uz.pdp.appfullcontactbot.model.Card;
@@ -109,22 +106,10 @@ public class MessageServiceImpl implements MessageService {
             return;
         }
         List<Card> cards = cardRepository.findAllByUserId(userId);
-        cards.sort(Comparator.comparing(Card::isMain));
-        StringBuilder sb = new StringBuilder();
-        sb.append(langService.getMessage(LangFields.CARD_INFO_TEXT, userId));
-        for (int i = 0; i < cards.size(); i++) {
-            Card card = cards.get(i);
-            if (card.isMain())
-                sb.append(langService.getMessage(LangFields.MAIN_CARD_TEXT, userId));
-            sb
-                    .append(i + 1)
-                    .append(". ")
-                    .append(card.getPan())
-                    .append("\n\n");
-        }
-        commonUtils.setState(userId,State.USERS_CARDS_LIST);
-        int messageId = sender.sendMessage(userId, langService.getMessage(LangFields.PLEASE_WAIT_TEXT, userId), buttonService.withString(List.of(langService.getMessage(LangFields.BACK_TEXT, userId))));
-        sender.editMessage(userId,messageId, sb.toString(),buttonService.usersCardsList(userId,cards));
+        String text = commonUtils.getUsersCardsString(cards, userId);
+        commonUtils.setState(userId, State.USERS_CARDS_LIST);
+        sender.autoDeleteKeyboard(userId);
+        sender.sendMessage(userId, text, buttonService.usersCardsList(userId, cards));
     }
 
     private void sendUserPaymentHistory(Long userId) {
@@ -187,6 +172,6 @@ public class MessageServiceImpl implements MessageService {
 
     private void start(Long userId) {
         commonUtils.setState(userId, State.START);
-        sender.sendPhoto(userId, langService.getMessage(LangFields.HELLO, userId), AppConstants.PHOTO_PATH, buttonService.start(userId));
+        sender.sendPhoto(userId, langService.getMessage(LangFields.HELLO, userId), AppConstants.BANNER_PHOTO_JPG, buttonService.start(userId));
     }
 }

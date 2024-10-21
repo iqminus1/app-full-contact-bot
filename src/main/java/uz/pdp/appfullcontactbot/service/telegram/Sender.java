@@ -11,8 +11,10 @@ import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageTe
 import org.telegram.telegrambots.meta.api.objects.Chat;
 import org.telegram.telegrambots.meta.api.objects.ChatInviteLink;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
+import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardRemove;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import uz.pdp.appfullcontactbot.enums.LangFields;
 import uz.pdp.appfullcontactbot.model.Group;
@@ -84,9 +86,8 @@ public class Sender extends DefaultAbsSender {
         }
     }
 
-    public int sendMessage(Long userId, String text, ReplyKeyboard replyKeyboard) {
+    public void sendMessage(Long userId, String text, ReplyKeyboard replyKeyboard) {
         final int MAX_LENGTH = 1024;
-        int messageId = 0;
         if (text.length() > MAX_LENGTH) {
             int startIndex = 0;
 
@@ -105,8 +106,8 @@ public class Sender extends DefaultAbsSender {
                 try {
                     if (replyKeyboard != null) {
                         message.setReplyMarkup(replyKeyboard);
-                        messageId = execute(message).getMessageId();
-                    } else messageId = execute(message).getMessageId();
+                        execute(message);
+                    } else execute(message);
 
                 } catch (Exception e) {
                     throw new RuntimeException(e);
@@ -114,15 +115,26 @@ public class Sender extends DefaultAbsSender {
 
                 startIndex = endIndex + 1;
             }
-            return messageId;
         } else {
             try {
                 SendMessage sendMessage = new SendMessage(userId.toString(), text);
                 sendMessage.setReplyMarkup(replyKeyboard);
-                return execute(sendMessage).getMessageId();
+                execute(sendMessage);
             } catch (TelegramApiException e) {
                 throw new RuntimeException(e);
             }
+        }
+    }
+
+    public void autoDeleteKeyboard(Long userId) {
+        SendMessage sendMessage = new SendMessage(userId.toString(), ".");
+        sendMessage.setReplyMarkup(new ReplyKeyboardRemove(true));
+
+        try {
+            Message execute = execute(sendMessage);
+            deleteMessage(userId, execute.getMessageId());
+        } catch (TelegramApiException e) {
+            throw new RuntimeException(e);
         }
     }
 

@@ -1,9 +1,12 @@
 package uz.pdp.appfullcontactbot.utils;
 
 import org.telegram.telegrambots.meta.api.objects.Chat;
+import uz.pdp.appfullcontactbot.enums.LangFields;
+import uz.pdp.appfullcontactbot.model.Card;
 import uz.pdp.appfullcontactbot.model.User;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public interface AppConstants {
     String BOT_TOKEN = "7637751901:AAH-CWlyqsGZ_OXt5Cwq_dIkDjV7i3tI0RU";
@@ -31,8 +34,10 @@ public interface AppConstants {
 
     String ERROR_TEXT = "STPIMS-ERR-";
     int ERROR_LENGTH = ERROR_TEXT.length();
-    String PHOTO_PATH = "C:\\Users\\User\\Desktop\\projects\\app-full-contact-bot\\files/banner_photo.jpg";
+    String BANNER_PHOTO_JPG = "C:\\Users\\User\\Desktop\\projects\\app-full-contact-bot\\files/banner_photo.jpg";
     String CARD_INFO_TEXT = "cardInfo:";
+    String BACK_TO_START_DATA = "backToStart";
+    String DEMO_TEXT = "demo:";
 
     static User setSubscriptionTime(User user) {
         return setSubscriptionTime(user, 1);

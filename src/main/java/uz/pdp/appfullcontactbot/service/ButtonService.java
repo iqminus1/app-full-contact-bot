@@ -27,4 +27,6 @@ public interface ButtonService {
     ReplyKeyboard paymentHistory(Long userId);
 
     InlineKeyboardMarkup usersCardsList(Long userId, List<Card> cards);
+
+    InlineKeyboardMarkup cardInfo(long cardId, boolean main);
 }
